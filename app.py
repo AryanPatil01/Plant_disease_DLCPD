@@ -44,12 +44,26 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────
 MODEL_PATH     = "plant_model_complete/convnext_plant_disease.keras"
 CLASS_CSV_PATH = "class_dict.csv"
-ESP32_URL      = "http://10.161.93.232/capture"
 IMG_SIZE       = (224, 224)
 
 # ConvNeXt last convolutional block name for Grad-CAM
 # Adjust if your saved model uses a different name (check model.summary())
 GRADCAM_LAYER  = "convnext_tiny"
+
+# ── ESP-32 camera URL ────────────────────────────────────────
+# Set the ESP32_CAPTURE_URL environment variable to override.
+# On Railway (cloud), leave it unset — the route will return a
+# friendly 503 instead of hanging on an unreachable home IP.
+#
+#   Local demo  → set nothing (falls back to your home IP below)
+#   Railway     → don't set it, or set to empty string
+#   Ngrok demo  → export ESP32_CAPTURE_URL=https://xxxx.ngrok.io/capture
+#
+ESP32_URL: str | None = os.environ.get("ESP32_CAPTURE_URL", "http://10.161.93.232/capture") or None
+if ESP32_URL:
+    print(f"[INFO] ESP-32 camera URL: {ESP32_URL}")
+else:
+    print("[INFO] ESP32_CAPTURE_URL not set — /predict_esp32 route will be disabled.")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -288,9 +302,23 @@ async def predict_upload(file: UploadFile = File(...)):
 @app.post("/predict_esp32")
 async def predict_esp32():
     """
-    Fetch a JPEG snapshot directly from the ESP-32 IP camera at
-    http://10.161.93.232/capture, run inference + Grad-CAM, and return results.
+    Fetch a JPEG snapshot from the ESP-32 IP camera, run inference + Grad-CAM,
+    and return results.
+
+    Requires the ESP32_CAPTURE_URL environment variable to be set.
+    If not set (e.g. on Railway cloud), returns HTTP 503 immediately
+    instead of hanging on an unreachable home-network IP.
     """
+    # ── Guard: route disabled when no ESP32 URL is configured ──
+    if not ESP32_URL:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "ESP-32 camera is not configured on this deployment. "
+                "Set the ESP32_CAPTURE_URL environment variable to enable this route."
+            ),
+        )
+
     try:
         resp = requests.get(ESP32_URL, timeout=5)
         resp.raise_for_status()
