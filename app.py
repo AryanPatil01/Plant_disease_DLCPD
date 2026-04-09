@@ -43,7 +43,7 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────
-MODEL_PATH     = "plant_model_complete/convnext_plant_disease.keras"
+MODEL_PATH     = "convnext_plant_disease.keras"   # sits next to app.py in Railway
 CLASS_CSV_PATH = "class_dict.csv"
 IMG_SIZE       = (224, 224)
 
