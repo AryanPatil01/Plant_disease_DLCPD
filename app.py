@@ -17,7 +17,8 @@ import requests
 import tensorflow as tf
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 
@@ -363,6 +364,26 @@ async def health():
         "model_loaded": model is not None,
         "num_classes":  len(class_map),
     }
+
+
+# ─────────────────────────────────────────────────────────────
+# SERVE FRONTEND  (must be LAST — after all API routes)
+# ─────────────────────────────────────────────────────────────
+# Root → index.html
+@app.get("/", include_in_schema=False)
+async def serve_root():
+    return FileResponse("index.html")
+
+# dashboard.html → explicit route so Railway can navigate there
+@app.get("/dashboard.html", include_in_schema=False)
+async def serve_dashboard():
+    return FileResponse("dashboard.html")
+
+# All other static assets (app.js, style.css, hero_bg.png, …)
+# IMPORTANT: mount at "/static" internally, but the HTML already
+# references files at the root path, so we mount at "/" last.
+# FastAPI checks named routes first, so API endpoints are safe.
+app.mount("/", StaticFiles(directory=".", html=True), name="frontend")
 
 
 # ─────────────────────────────────────────────────────────────
