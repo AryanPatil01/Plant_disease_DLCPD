@@ -10,6 +10,7 @@ import io
 import base64
 import csv
 import os
+import pathlib
 
 import cv2
 import numpy as np
@@ -41,7 +42,7 @@ app.add_middleware(
 
 
 # ─────────────────────────────────────────────────────────────
-# CONSTANTS
+# CONSTANTSx
 # ─────────────────────────────────────────────────────────────
 MODEL_PATH     = "convnext_plant_disease.keras"   # sits next to app.py in Railway
 CLASS_CSV_PATH = "class_dict.csv"
@@ -50,21 +51,6 @@ IMG_SIZE       = (224, 224)
 # ConvNeXt last convolutional block name for Grad-CAM
 # Adjust if your saved model uses a different name (check model.summary())
 GRADCAM_LAYER  = "convnext_tiny"
-
-# ── ESP-32 camera URL ────────────────────────────────────────
-# Set the ESP32_CAPTURE_URL environment variable to override.
-# On Railway (cloud), leave it unset — the route will return a
-# friendly 503 instead of hanging on an unreachable home IP.
-#
-#   Local demo  → set nothing (falls back to your home IP below)
-#   Railway     → don't set it, or set to empty string
-#   Ngrok demo  → export ESP32_CAPTURE_URL=https://xxxx.ngrok.io/capture
-#
-ESP32_URL: str | None = os.environ.get("ESP32_CAPTURE_URL", "http://10.161.93.232/capture") or None
-if ESP32_URL:
-    print(f"[INFO] ESP-32 camera URL: {ESP32_URL}")
-else:
-    print("[INFO] ESP32_CAPTURE_URL not set — /predict_esp32 route will be disabled.")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -84,10 +70,14 @@ except FileNotFoundError:
     print(f"[WARNING] {CLASS_CSV_PATH} not found — class names will fall back to indices.")
 
 
+
 # ─────────────────────────────────────────────────────────────
 # LOAD KERAS MODEL
 # ─────────────────────────────────────────────────────────────
 model: tf.keras.Model = None  # type: ignore
+
+# Try to auto-download the model first (no-op if file already exists)
+download_model_if_missing()
 
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
