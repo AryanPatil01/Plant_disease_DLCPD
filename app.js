@@ -3,7 +3,14 @@
    Main frontend logic + FastAPI integration
 ══════════════════════════════════════════ */
 
-const API_BASE = 'http://localhost:8000';
+// ─── API BASE URL (auto-detects local vs. Railway) ────────────────────────
+// • On localhost / 127.0.0.1  → talks to the local uvicorn server at :8000
+// • On Railway (or any other host) → backend is on the same origin (same app)
+//   so we use window.location.origin instead of a hardcoded URL.
+//
+// To override for Ngrok or a custom domain, just change the fallback below.
+const _isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE  = _isLocal ? 'http://localhost:8000' : window.location.origin;
 
 // ─── SESSION HISTORY ──────────────────────────────────────────
 const HISTORY_KEY = 'agroshield_history';
