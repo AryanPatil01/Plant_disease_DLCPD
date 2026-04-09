@@ -1,7 +1,7 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║          AGROSHIELD — FastAPI Backend (app.py)              ║
-║   ConvNeXt-Tiny · Grad-CAM · Upload + ESP-32 IP Camera      ║
+║         AGROSHIELD — FastAPI Backend (app.py)                ║
+║   ConvNeXt-Tiny · Grad-CAM · Upload + ESP-32 IP Camera       ║
 ╚══════════════════════════════════════════════════════════════╝
 Run:  uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 """
@@ -42,7 +42,7 @@ app.add_middleware(
 
 
 # ─────────────────────────────────────────────────────────────
-# CONSTANTSx
+# CONSTANTS
 # ─────────────────────────────────────────────────────────────
 MODEL_PATH     = "convnext_plant_disease.keras"   # sits next to app.py in Railway
 CLASS_CSV_PATH = "class_dict.csv"
@@ -51,6 +51,9 @@ IMG_SIZE       = (224, 224)
 # ConvNeXt last convolutional block name for Grad-CAM
 # Adjust if your saved model uses a different name (check model.summary())
 GRADCAM_LAYER  = "convnext_tiny"
+
+# Pulls from Railway Variables, defaults to local router IP if not found
+ESP32_URL = os.getenv("ESP32_CAPTURE_URL", "http://10.161.93.232/capture")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -77,7 +80,7 @@ except FileNotFoundError:
 model: tf.keras.Model = None  # type: ignore
 
 # Try to auto-download the model first (no-op if file already exists)
-download_model_if_missing()
+# download_model_if_missing()  <--- COMMENTED OUT TO FIX NAMEERROR CRASH
 
 try:
     model = tf.keras.models.load_model(MODEL_PATH)
