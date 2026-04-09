@@ -8,3 +8,4 @@ opencv-python-headless==4.9.0.80
 pandas==2.2.0
 pillow==10.2.0
 requests==2.31.0
+gdown==5.1.0
